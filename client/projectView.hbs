@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style media="screen">
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: rgb(250,250,250);
+        display: grid;
+        grid-template-areas:
+        'top top top top top'
+        'left right right right right'
+        'left right right right right'
+        'left right right right right'
+        'left right right right right'
+        'left right right right right'
+        'left right right right right'
+        'left right right right right'
+        'left right right right right';
+        height: 100vh;
+        width: 100vw;
+      }
+      .top {
+        grid-area: top;
+        border-bottom: 1px solid black;
+        /* width: 20vw; */
+      }
+      .folders-list {
+        overflow: scroll;
+        margin-right: 5%;
+        margin-bottom: 5%;
+      }
+      .folders {
+        grid-area: left;
+        border-right: 1px solid black;
+        width: 20vw;
+      }
+      .code {
+        grid-area: right;
+        width: calc(79vw);
+      }
+      .code .area {
+        white-space: pre;
+        overflow: auto;
+        border: none;
+        background-color: transparent;
+        height: 100%;
+        width: 100%;
+        resize: none;
+      }
+      .code .area:focus {
+        outline:none;
+      }
+      .terminal {
+        grid-area: bottom;
+        background-color: black;
+      }
+      .folder {
+        display: none;
+      }
+      .file {
+        font-size: 19px;
+        cursor: pointer;
+        -webkit-user-drag: element;
+        user-select: none;
+      }
+      .show {display:block;}
+      .dropfolder {
+        min-width: 25px;
+        min-height: 25px;
+        margin: auto 2px;
+        font-size: 19px;
+        cursor: pointer;
+      }
+      .red {
+        background-color: red;
+      }
+      .updatedAt {
+        font-size: 10px;
+        line-height: 20px;
+        margin: 0;
+        margin-left: 20px;
+      }
+      .download {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px;
+      }
+      .material-icons {
+        margin: auto 2px;
+        cursor: pointer;
+      }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet">
+  </head>
+  <body>
+    <div class="top">
+      <p id="updatedAt" class="updatedAt"></p>
+    </div>
+    <div class="folders" id="folders">
+      <div style="height: 10vh; font-size: 22px; padding-left: 5px; line-height: 10vh; display: flex;">
+        <p style="margin: 0; margin-right: 5.5vw;">File Explorer</p>
+        <span class="material-icons">create_new_folder</span>
+        <span class="material-icons">insert_drive_file</span>
+      </div>
+      <div class="folders-list">
+        {{{showFiles folders}}}
+        <div style="height: 5vh;"></div>
+      </div>
+    </div>
+    <div class="code">
+      <textarea class="area" id="code-area"></textarea>
+    </div>
+    <button class="download" onclick="download()">Download Code</button>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+    <script>
+      const socket = io();
+      let currPath = '/';
+      function show(folder) {
+        let bgImage = document.getElementById(`${folder}-icon`).style.backgroundImage;
+        if (document.getElementById(`${folder}-icon`).style.backgroundImage.includes('-open.svg')) {
+          document.getElementById(`${folder}-icon`).style.backgroundImage = bgImage.replace('-open.svg', '.svg');
+        } else {
+          document.getElementById(`${folder}-icon`).style.backgroundImage = bgImage.replace('.svg', '-open.svg');
+        }
+        console.log(bgImage);
+        document.getElementById(folder).classList.toggle("show");
+      }
+      function getCaretPosition(ctrl) {
+        if (document.selection) {
+          ctrl.focus();
+          var range = document.selection.createRange();
+          var rangelen = range.text.length;
+          range.moveStart('character', -ctrl.value.length);
+          var start = range.text.length - rangelen;
+          return {
+              'start': start,
+              'end': start + rangelen
+          };
+        } else if (ctrl.selectionStart || ctrl.selectionStart == '0') {
+          return {
+              'start': ctrl.selectionStart,
+              'end': ctrl.selectionEnd
+          };
+        } else {
+          return {
+              'start': 0,
+              'end': 0
+          };
+        }
+      }
+      function updateCursor() {
+        socket.emit("caretMove", getCaretPosition(document.getElementById('code-area')));
+      }
+      function updateFile(path) {
+        updateCursor();
+        if (path) {
+          socket.emit("update", {
+            name: window.location.pathname.split('/')[2],
+            path,
+            text: document.getElementById('code-area').value,
+          });
+        }
+      }
+      function download() {
+        $.ajax({
+          url: `/projects/${window.location.pathname.split('/')[2]}/download`,
+          method: 'GET',
+          success: function (data) {
+            var element = document.createElement('a');
+            element.setAttribute('href', 'data:application/zip;base64,' + data);
+            element.setAttribute('download', `${window.location.pathname.split('/')[2]}.zip`);
+
+            // element.style.display = 'none';
+            // document.body.appendChild(element);
+            //
+            // element.click();
+            //
+            // document.body.removeChild(element);
+          },
+          error: function (err) {
+            console.error(err);
+          }
+        });
+      }
+      function getFile(path) {
+        currPath = path;
+        $.ajax({
+          url: `/projects/${window.location.pathname.split('/')[2]}/get/file?filepath=${currPath}`,
+          type: 'GET',
+          timeout: 0,
+          success: function(data, textStatus, xhr) {
+            document.getElementById('code-area').value = data;
+            document.getElementById('code-area').addEventListener('keyup', updateFile.bind(null, currPath), false);
+            document.getElementById('code-area').addEventListener('onchange', updateFile.bind(null, currPath), false);
+            document.getElementById('code-area').addEventListener('onclick', updateCursor, false);
+          },
+          error: function (err) {
+            console.error(err);
+          }
+        });
+      }
+      socket.on('newUpdate', (data) => {
+        let mNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        if (currPath === data.path) {
+          document.getElementById('code-area').value = data.text;
+          let date = new Date();
+          console.log("l");
+          document.getElementById('updatedAt').innerHTML = `Last updated on ${mNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()} at ${date.getHours()}:${date.getMinutes()}`
+        }
+      });
+    </script>
+  </body>
+</html>

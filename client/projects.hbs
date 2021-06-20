@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style media="screen">
+      .header {
+        background-color: rgb(33,33,33);
+        color: rgb(250,250,250);
+        padding: 10px;
+        display: flow-root;
+      }
+      .header p {
+        height: 50px;
+        font-size: xx-large;
+        line-height: 50px;
+        float: left;
+      }
+      .header input {
+        float: right;
+        margin: 35px;
+        font-size: 20px;
+        border: none;
+        border-bottom: 1px cyan solid;
+        background-color: inherit;
+        color: rgb(230,230,230);
+        padding: 0 10px;
+        padding-top: 10px;
+      }
+      .header input:focus {
+        outline: none;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: rgb(250,250,250);
+      }
+      .projects {
+        width: calc(100% - 4em);
+        margin: auto;
+        margin-top: 2em;
+      }
+      .tiles {
+        display: inline-grid;
+        grid-template-columns: 175px 175px 175px 175px 175px 175px;
+        grid-gap: 2em;
+        width: calc(100% - 50px);
+      }
+      .tiles .tile {
+        width: 175px;
+        height: 175px;
+        background-color: rgb(200,200,200);
+        padding: 10px;
+      }
+      .tiles .tile:nth-child(n+7) {
+        /* margin-top: 25px; */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <p>Projects</p>
+      <input type="text" name="" value="" class="input" placeholder="Search">
+    </div>
+    <div class="projects">
+      <div class="tiles">
+        <div class="tile" onclick="window.location.href='/projects/id'">
+          <p style="font-weight: bold; height: 50%;">Node JS Project</p>
+          <p>Platform: NodeJS</p>
+          <p>Version: 14.2.2</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
